@@ -1,0 +1,11 @@
+ccxt 
+mplfinance 
+pandas
+numpy
+matplotlib
+python-dotenv
+jinja2
+streamlit
+plotly
+scikit-learn
+tqdm
