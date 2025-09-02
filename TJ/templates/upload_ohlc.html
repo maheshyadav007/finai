@@ -1,0 +1,21 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Upload OHLC CSV</h1>
+
+<p>Expected headers: <code>timestamp, open, high, low, close, volume, symbol</code>.
+    <br />Timestamp may be epoch seconds or milliseconds.
+</p>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <input type="file" name="file" accept=".csv" required>
+    </div>
+    <button type="submit">Upload</button>
+</form>
+
+{% if symbols %}
+<p style="margin-top:1rem;">Loaded symbols:
+    {% for s in symbols %}<span class="tag">{{ s }}</span>{% endfor %}
+</p>
+{% endif %}
+{% endblock %}

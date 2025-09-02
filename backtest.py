@@ -622,7 +622,7 @@ class BacktestEngine:
         - Dictionary with performance metrics
         """
         strategy_name = strategy.name
-        leverage = params.get('leverage', 10)
+        leverage = params.get('leverage')
         
         print(f"Backtesting {strategy_name} strategy with {leverage}x leverage...")
         
@@ -709,35 +709,15 @@ class BacktestEngine:
             if signal != 0 and not (stop_loss_hit or take_profit_hit):
                 # Case 1: We have a long position and get a sell signal
                 if position > 0 and signal == -1:
-                    # Close the long position
-                    exit_price = results.iloc[i]['Close']
-                    trade_id, pnl, current_capital = self.close_trade(
-                        results, i, position, position_size, entry_price, exit_price, 
-                        leverage, trade_id, close_reason="signal"
-                    )
-                    
-                    # Open a short position with proper position sizing
-                    trade_id, position_size, stop_loss, take_profit = self.open_trade(
-                        results, i, -1, exit_price, current_capital, leverage, params, trade_id
-                    )
-                    position = -1
-                    entry_price = exit_price
+                    # Just ignore the sell signal when we already have a long position
+                    # We'll wait for TP or SL to close the position
+                    pass
                     
                 # Case 2: We have a short position and get a buy signal
                 elif position < 0 and signal == 1:
-                    # Close the short position
-                    exit_price = results.iloc[i]['Close']
-                    trade_id, pnl, current_capital = self.close_trade(
-                        results, i, position, position_size, entry_price, exit_price, 
-                        leverage, trade_id, close_reason="signal"
-                    )
-                    
-                    # Open a long position with proper position sizing
-                    trade_id, position_size, stop_loss, take_profit = self.open_trade(
-                        results, i, 1, exit_price, current_capital, leverage, params, trade_id
-                    )
-                    position = 1
-                    entry_price = exit_price
+                    # Just ignore the buy signal when we already have a short position
+                    # We'll wait for TP or SL to close the position
+                    pass
                     
                 # Case 3: No position and get a buy signal
                 elif position == 0 and signal == 1:
@@ -1051,7 +1031,7 @@ def main():
     initial_capital = 200
     
     # Number of rows to load from the CSV (from the end)
-    data_rows = 50000
+    data_rows = 100000
     
     # -----------------------------------------------------------------------
     # STRATEGY-SPECIFIC PARAMETERS
@@ -1059,8 +1039,8 @@ def main():
     
     # Define parameters for each strategy separately for clarity
     sma_params = {
-        'fast_sma': [ 9, 20],      # Fast SMA periods
-        'slow_sma': [50, 100],    # Slow SMA periods
+        'fast_sma': [ 9],      # Fast SMA periods
+        'slow_sma': [50],    # Slow SMA periods
     }
     
     rsi_params = {
@@ -1078,13 +1058,13 @@ def main():
     common_params = {
         # Timeframes to test
         # 'granularity': ['1min', '5min', '15min', '1h'],      # Data timeframes
-        'granularity': ['5min'],
+        'granularity': ['15min'],
         
         # Risk and position sizing parameters
         'leverage': [10],                          # Trading leverage
         'max_risk_pct': [2.0],                     # Maximum risk per trade (% of capital)
-        'position_size_pct': [80],      # Position size (% of capital)
-        'profit_target_pct': [None, 6.0],        # Take profit target (% gain)
+        'position_size_pct': [100],      # Position size (% of capital)
+        'profit_target_pct': [6, 8, 10, 12, 14 ],        # Take profit target (% gain)
     }
     
     # -----------------------------------------------------------------------
@@ -1095,8 +1075,8 @@ def main():
         # Which strategies to test (comment out any you don't want to test)
         'strategies_to_test': [
             'sma',           # Simple Moving Average strategy
-            'rsi',           # Relative Strength Index strategy
-            'combined',      # Combined SMA + RSI strategy
+            # 'rsi',           # Relative Strength Index strategy
+            # 'combined',      # Combined SMA + RSI strategy
         ],
         
         # Filter specific parameters (use None to test all values, or specify a single value)

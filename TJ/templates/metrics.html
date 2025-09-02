@@ -1,0 +1,32 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Performance Metrics</h1>
+
+<form method="post" action="{{ url_for('metrics') }}">
+    <div class="form-group">
+        <label for="start_date">Start Date</label>
+        <input type="date" id="start_date" name="start_date" value="{{ start_date.strftime('%Y-%m-%d') if start_date else '' }}">
+    </div>
+    <div class="form-group">
+        <label for="end_date">End Date</label>
+        <input type="date" id="end_date" name="end_date" value="{{ end_date.strftime('%Y-%m-%d') if end_date else '' }}">
+    </div>
+    <button type="submit">Apply Filter</button>
+</form>
+
+<h2>Metrics</h2>
+<table>
+    <tbody>
+        <tr><th>Total Trades</th><td>{{ metrics.total_trades }}</td></tr>
+        <tr><th>Total PnL</th><td>{{ '%.2f'|format(metrics.total_pnl) }}</td></tr>
+        <tr><th>Average PnL per Trade</th><td>{{ '%.2f'|format(metrics.average_pnl) }}</td></tr>
+        <tr><th>Win Rate</th><td>{{ '%.2f'|format(metrics.win_rate) }}%</td></tr>
+        <tr><th>Average Win</th><td>{{ '%.2f'|format(metrics.average_win) }}</td></tr>
+        <tr><th>Average Loss</th><td>{{ '%.2f'|format(metrics.average_loss) }}</td></tr>
+        <tr><th>Largest Win</th><td>{{ '%.2f'|format(metrics.largest_win) }}</td></tr>
+        <tr><th>Largest Loss</th><td>{{ '%.2f'|format(metrics.largest_loss) }}</td></tr>
+        <tr><th>Profit Factor</th><td>{{ '%.2f'|format(metrics.profit_factor) }}</td></tr>
+        <tr><th>Expectancy</th><td>{{ '%.2f'|format(metrics.expectancy) }}</td></tr>
+    </tbody>
+</table>
+{% endblock %}

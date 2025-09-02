@@ -1,0 +1,119 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<h1>Candlestick Chart</h1>
+
+<div class="toolbar" style="margin-bottom:12px;">
+    <form method="get" action="{{ url_for('chart') }}">
+        <label for="symbol">Symbol</label>
+        <select id="symbol" name="symbol">
+            {% for s in symbols %}
+            <option value="{{ s }}" {% if s==selected %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+        <label for="interval" style="margin-left:12px;">Interval</label>
+        <select id="interval" name="interval">
+            {% set iv = request.args.get('interval') or '1h' %}
+            {% for opt in ['1m','5m','15m','1h','4h','1d'] %}
+            <option value="{{ opt }}" {% if opt==iv %}selected{% endif %}>{{ opt }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="margin-left:8px;">Load</button>
+    </form>
+</div>
+
+<!-- Always render the container -->
+<div id="tv-chart" style="height:520px;border:1px solid #ddd;border-radius:8px;"></div>
+{% endblock %}
+
+{% block page_scripts %}
+<!-- Load local Lightweight Charts (no CDN dependency) -->
+<script src="{{ url_for('static', filename='js/lightweight-charts.standalone.production.min.js') }}"></script>
+
+<script>
+    (function () {
+        // Simple visible error helper
+        function showError(msg) {
+            const el = document.createElement('div');
+            el.style.cssText = 'margin-top:12px;padding:10px;border:1px solid #f99;background:#fff4f4;color:#900;border-radius:8px;font-family:system-ui';
+            el.textContent = msg;
+            document.querySelector('.main-content')?.prepend(el);
+            console.error(msg);
+        }
+
+        // Normalize raw Binance arrays or already-normalized objects
+        function normalize(raw) {
+            if (!Array.isArray(raw)) return [];
+            const arr = Array.isArray(raw[0])
+                // Binance kline array: [openTime, open, high, low, close, volume, closeTime, ...]
+                ? raw.map(k => ({
+                    time: Math.floor(k[0] / 1000),
+                    open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+                    volume: +(k[5] ?? 0),
+                }))
+                // Object shape
+                : raw.map(d => ({
+                    time: typeof d.time === 'number'
+                        ? (d.time > 2e10 ? Math.floor(d.time / 1000) : d.time)  // ms -> s if needed
+                        : Math.floor(new Date(d.time).getTime() / 1000),
+                    open: +(d.open ?? d.o),
+                    high: +(d.high ?? d.h),
+                    low: +(d.low ?? d.l),
+                    close: +(d.close ?? d.c),
+                    volume: +(d.volume ?? d.v ?? 0),
+                }));
+
+            return arr
+                .filter(x => Number.isFinite(x.time) && [x.open, x.high, x.low, x.close].every(Number.isFinite))
+                .sort((a, b) => a.time - b.time);
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Guards
+            const container = document.getElementById('tv-chart');
+            if (!container) return showError('Chart container #tv-chart not found.');
+
+            if (!window.LightweightCharts || typeof LightweightCharts.createChart !== 'function') {
+                return showError('LightweightCharts library not loaded. Check static/js path.');
+            }
+
+            // Inputs
+            const symbol = {{ selected | tojson
+        }};
+    const interval = new URLSearchParams(location.search).get('interval') || '1h';
+
+    if (!symbol) return showError('No symbol selected.');
+
+    // Create chart
+    const chart = LightweightCharts.createChart(container, {
+        autoSize: true,
+        layout: { background: { type: 'solid', color: '#ffffff' }, textColor: '#333' },
+        grid: { vertLines: { color: '#eee' }, horzLines: { color: '#eee' } },
+        timeScale: { timeVisible: true, secondsVisible: true },
+        rightPriceScale: { borderVisible: false },
+    });
+
+    // Fetch data from your Flask proxy (Binance source)
+    try {
+        const resp = await fetch(`/api/ohlc?source=binance&symbol=${encodeURIComponent(symbol)}&interval=${encodeURIComponent(interval)}&limit=1000`);
+        if (!resp.ok) return showError(`API error ${resp.status}`);
+        const raw = await resp.json();
+        const candles = normalize(raw);
+        if (!candles.length) return showError('No candles after normalization.');
+
+        const candleSeries = chart.addCandlestickSeries();
+        candleSeries.setData(candles);
+
+        // Optional: volume histogram
+        const volumeSeries = chart.addHistogramSeries({ priceScaleId: '' });
+        volumeSeries.priceScale().applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+        volumeSeries.setData(candles.map(d => ({ time: d.time, value: d.volume })));
+
+        chart.timeScale().fitContent();
+    } catch (e) {
+        showError('Init failed: ' + (e?.message || e));
+    }
+  });
+}) ();
+</script>
+{% endblock %}

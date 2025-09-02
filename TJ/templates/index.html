@@ -1,0 +1,54 @@
+{% extends 'layout.html' %}
+{% block content %}
+<h1>Trade History</h1>
+{% if trades %}
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Instrument</th>
+            <th>Date &amp; Time</th>
+            <th>Position</th>
+            <th>Entry Price</th>
+            <th>Exit Price</th>
+            <th>Quantity</th>
+            <th>PnL</th>
+            <th>Notes</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for trade in trades %}
+        <tr>
+            <td>{{ trade.id }}</td>
+            <td>{{ trade.instrument }}</td>
+            <td>{{ trade.date_time.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ trade.position.capitalize() }}</td>
+            <td>{{ '%.2f'|format(trade.entry_price) }}</td>
+            <td>{{ '%.2f'|format(trade.exit_price) }}</td>
+            <td>{{ '%.2f'|format(trade.quantity) }}</td>
+            <td>{{ '%.2f'|format(trade.pnl) }}</td>
+            <td>{{ trade.notes }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No trades recorded yet. <a href="{{ url_for('add_trade') }}">Add your first trade</a>.</p>
+{% endif %}
+
+<h2>Overall Metrics</h2>
+<table>
+    <tbody>
+        <tr><th>Total Trades</th><td>{{ metrics.total_trades }}</td></tr>
+        <tr><th>Total PnL</th><td>{{ '%.2f'|format(metrics.total_pnl) }}</td></tr>
+        <tr><th>Average PnL per Trade</th><td>{{ '%.2f'|format(metrics.average_pnl) }}</td></tr>
+        <tr><th>Win Rate</th><td>{{ '%.2f'|format(metrics.win_rate) }}%</td></tr>
+        <tr><th>Average Win</th><td>{{ '%.2f'|format(metrics.average_win) }}</td></tr>
+        <tr><th>Average Loss</th><td>{{ '%.2f'|format(metrics.average_loss) }}</td></tr>
+        <tr><th>Largest Win</th><td>{{ '%.2f'|format(metrics.largest_win) }}</td></tr>
+        <tr><th>Largest Loss</th><td>{{ '%.2f'|format(metrics.largest_loss) }}</td></tr>
+        <tr><th>Profit Factor</th><td>{{ '%.2f'|format(metrics.profit_factor) }}</td></tr>
+        <tr><th>Expectancy</th><td>{{ '%.2f'|format(metrics.expectancy) }}</td></tr>
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title if title else 'Trade Journal' }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a class="nav-brand" href="{{ url_for('index') }}">Trade Journal</a>
+      <ul class="nav-links">
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('add_trade') }}">Add Trade</a></li>
+        <li><a href="{{ url_for('metrics') }}">Metrics</a></li>
+        <li><a href="{{ url_for('export') }}">Export CSV</a></li>
+        <li><a href="{{ url_for('chart') }}">Chart</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  {# Page-specific scripts go here. Do NOT put page JS after
+
+</html> #}
+{% block page_scripts %}{% endblock %}
+</body>
+
+</html>
