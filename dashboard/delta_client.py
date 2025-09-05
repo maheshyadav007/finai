@@ -162,8 +162,19 @@ class DeltaIndiaClient:
         data = self._request("GET", path)
         result = data.get("result", []) if isinstance(data, dict) else []
         self._log(f"Balances count={len(result)}")
-        return result
+        out = []
+        for row in result or []:
+            try:
+                out.append({
+                    "asset_symbol": row.get("asset_symbol"),
+                    "balance": float(row.get("balance", 0)),
+                    "available_balance": float(row.get("available_balance", 0)),
+                    "blocked_margin": float(row.get("blocked_margin", 0)),
+                })
+            except Exception as e:
 
+                print(f"[Skip row error] {e} | row={row}")
+        return out[0]
     def get_wallet_transactions(
         self,
         start_us: Optional[int] = None,
@@ -188,7 +199,17 @@ class DeltaIndiaClient:
             out.extend((page or {}).get("result") or [])
         self._log(f"Wallet txns fetched={len(out)}")
         return out
-
+    def get_balances(api_key: str, api_secret: str, verbose: bool = False) -> List[Dict[str, float]]:
+        """
+        Return a list of dicts with only 4 fields:
+        - asset_symbol
+        - balance
+        - available_balance
+        - blocked_margin
+        """
+        client = DeltaIndiaClient(api_key, api_secret, verbose=verbose)
+        data = client.get_wallet_balances()  # -> list of dicts from API
+        
     def get_fills(
         self,
         start_us: int,
